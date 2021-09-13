@@ -291,7 +291,7 @@ class TestCaseFactory:
     """Class responsible for creating TestCase based on a config loaded from YAML"""
 
     @staticmethod
-    def create(test):
+    def create(test, long_test=False):
         status = TestCase.SKIPPED if test['ignore'] else TestCase.FAILED
         use_sysexec = test['target'] in DEVICE_TARGETS
 
@@ -317,6 +317,8 @@ class TestCaseFactory:
                 status=status
             )
         if test['type'] == 'busybox':
+            if not long_test:
+                status = TestCase.SKIPPED
             return TestCaseBusybox(
                 name=test['name'],
                 target=test['target'],
