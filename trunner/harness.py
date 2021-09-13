@@ -33,6 +33,36 @@ class UnitTestResult:
         return res
 
 
+class BusyboxTestResult:
+    """Class representing results of execution of the Busybox test suite."""
+
+    PASS = 'PASS'
+    FAIL = 'FAIL'
+    IGNORE = 'SKIPPED'
+
+    def __init__(self, name, status, path='', line='', msg=''):
+        self.name = name
+        self.status = status
+        self.msg = msg
+
+    def __str__(self):
+        if self.status == BusyboxTestResult.PASS:
+            color = Color.OK
+        elif self.status == BusyboxTestResult.FAIL:
+            color = Color.FAIL
+        elif self.status == BusyboxTestResult.IGNORE:
+            color = Color.SKIP
+
+        status = Color.colorify(self.status, color)
+
+        res = f"{status}: {self.name}"
+
+        if self.status == 'FAIL':
+            res += '\n\t\tTest case verbose output from busybox test suite: \n'
+            res += f'{self.msg}'
+        return res
+
+
 class UnitTestHarness:
     """Class providing harness for parsing output of Unity tests"""
 
@@ -46,7 +76,6 @@ class UnitTestHarness:
     def harness(proc):
         test_results = []
         last_assertion = {}
-
         while True:
             idx = proc.expect([
                 UnitTestHarness.ASSERT,
@@ -55,7 +84,6 @@ class UnitTestHarness:
                 UnitTestHarness.FINAL
             ])
             groups = proc.match.groups()
-
             if idx == 0:
                 assertion = dict(zip(('path', 'line', 'status', 'msg'), groups))
                 # We only care for fail messages
@@ -83,5 +111,62 @@ class UnitTestHarness:
                 assert fail_no == fail
                 assert ignore_no == ignore
                 assert len(test_results) == total
+
+                return test_results
+
+
+class BusyboxTestHarness:
+    """Class providing harness for parsing output of the Busybox test suite"""
+
+    RESULT = r"(PASS|SKIPPED|FAIL): (.+?)\r+\n"
+    FINAL = r"\*\*\*\*The Busybox Test Suite completed\*\*\*\*\r+\n"
+    MESSAGE = r"(.*?)\r+\n"
+
+    @staticmethod
+    def harness(proc, self=None):
+        passed_nr = 0
+        failed_nr = 0
+        skipped_nr = 0
+        test_results = []
+        last_match_was_msg = False
+        test = None
+        msg = ""
+
+        while True:
+            idx = proc.expect([
+                BusyboxTestHarness.RESULT,
+                BusyboxTestHarness.FINAL,
+                BusyboxTestHarness.MESSAGE
+            ], timeout=45)
+            groups = proc.match.groups()
+            if idx == 0:
+                if test is not None:
+                    if test['status'] == 'FAIL':
+                        test['msg'] = msg
+                    test_results.append(BusyboxTestResult(**test))
+
+                test = dict(zip(('status', 'name'), groups[:2]))
+                test['name'] = 'busybox ' + test['name']
+                if test['status'] == 'FAIL':
+                    failed_nr = failed_nr + 1
+                if test['status'] == 'PASS':
+                    passed_nr = passed_nr + 1
+                if test['status'] == 'SKIPPED':
+                    skipped_nr = skipped_nr + 1
+                last_match_was_msg = False
+            elif idx == 2:
+                if not last_match_was_msg:
+                    msg = ""
+                msg_next_line = groups[0]
+                msg = msg + "\n\t\t" + msg_next_line
+                last_match_was_msg = True
+            elif idx == 1:
+                if test['status'] == 'FAIL':
+                    test['msg'] = msg
+                test_results.append(BusyboxTestResult(**test))
+
+                test_stats = [passed_nr, failed_nr, skipped_nr]
+
+                total, fail, ignore = test_stats
 
                 return test_results

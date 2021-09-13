@@ -7,7 +7,7 @@ import traceback
 
 from pexpect.exceptions import TIMEOUT, EOF
 
-from .harness import UnitTestHarness, UnitTestResult
+from .harness import UnitTestHarness, BusyboxTestHarness, UnitTestResult, BusyboxTestResult
 from .tools.color import Color
 from .config import DEVICE_TARGETS
 
@@ -162,6 +162,7 @@ class TestCase:
         if self.psh:
             self.exec_test(proc)
             if self.failed():
+                print("----epty return---")
                 return
 
         res = None
@@ -247,6 +248,45 @@ class TestCaseUnit(TestCase):
         return res
 
 
+class TestCaseBusybox(TestCase):
+    """The test case representing Busybox test suite."""
+
+    def __init__(
+        self,
+        name,
+        target,
+        timeout,
+        exec_cmd,
+        use_sysexec=False,
+        status=TestCase.FAILED
+    ):
+        super().__init__(name, target, timeout, exec_cmd, use_sysexec, status)
+        self.harness = BusyboxTestHarness.harness
+        self.busybox_test_results = []
+
+    def log_test_status(self):
+        super().log_test_status()
+
+        for test in self.busybox_test_results:
+            if test.status == BusyboxTestResult.FAIL:
+                logging.info(f"\t{test}\n")
+            else:
+                logging.debug(f"\t{test}\n")
+
+    def handle(self, proc, psh=True):
+        res = super().handle(proc, psh)
+
+        if self.status == TestCase.PASSED:
+            self.busybox_test_results = res
+
+        for test in self.busybox_test_results:
+            if test.status == BusyboxTestResult.FAIL:
+                self.status = TestCase.FAILED
+                break
+
+        return res
+
+
 class TestCaseFactory:
     """Class responsible for creating TestCase based on a config loaded from YAML"""
 
@@ -272,6 +312,15 @@ class TestCaseFactory:
                 timeout=test['timeout'],
                 psh=test['psh'],
                 harness_path=test['harness'],
+                exec_cmd=test.get('exec'),
+                use_sysexec=use_sysexec,
+                status=status
+            )
+        if test['type'] == 'busybox':
+            return TestCaseBusybox(
+                name=test['name'],
+                target=test['target'],
+                timeout=test['timeout'],
                 exec_cmd=test.get('exec'),
                 use_sysexec=use_sysexec,
                 status=status

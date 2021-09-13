@@ -1,0 +1,5 @@
+test:
+    type: busybox
+    tests:
+        - name: busybox
+          exec: test_busybox
