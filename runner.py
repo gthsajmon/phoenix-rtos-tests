@@ -78,7 +78,7 @@ def parse_args():
                         default=False, action='store_true',
                         help="Board will not be flashed by runner.")
 
-    parser.add_argument("--long_test",
+    parser.add_argument("--long-test",
                         default=False, action='store_true',
                         help="Long tests will be run")
 
@@ -110,7 +110,7 @@ def main():
                          test_paths=args.test,
                          build=args.build,
                          flash=not args.no_flash,
-                         serial=(args.serial, args.baudrate)
+                         serial=(args.serial, args.baudrate),
                          long_test=args.long_test)
 
     passed, failed, skipped = runner.run()

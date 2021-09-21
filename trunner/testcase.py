@@ -162,7 +162,6 @@ class TestCase:
         if self.psh:
             self.exec_test(proc)
             if self.failed():
-                print("----epty return---")
                 return
 
         res = None
@@ -257,29 +256,30 @@ class TestCaseBusybox(TestCase):
         target,
         timeout,
         exec_cmd,
+        psh=True,
         use_sysexec=False,
         status=TestCase.FAILED
     ):
-        super().__init__(name, target, timeout, exec_cmd, use_sysexec, status)
+        super().__init__(name, target, timeout, psh, exec_cmd, use_sysexec, status)
         self.harness = BusyboxTestHarness.harness
-        self.busybox_test_results = []
+        self.test_results = []
 
     def log_test_status(self):
         super().log_test_status()
 
-        for test in self.busybox_test_results:
+        for test in self.test_results:
             if test.status == BusyboxTestResult.FAIL:
                 logging.info(f"\t{test}\n")
             else:
                 logging.debug(f"\t{test}\n")
 
-    def handle(self, proc, psh=True):
-        res = super().handle(proc, psh)
+    def handle(self, proc):
+        res = super().handle(proc)
 
         if self.status == TestCase.PASSED:
-            self.busybox_test_results = res
+            self.test_results = res
 
-        for test in self.busybox_test_results:
+        for test in self.test_results:
             if test.status == BusyboxTestResult.FAIL:
                 self.status = TestCase.FAILED
                 break

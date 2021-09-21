@@ -9,6 +9,8 @@
 int main(int argc, char **argv)
 {
 	int ret;
+	char cmdargs[20];
+	char cmd[140] = "cd /usr/test/busybox/testsuite/ && export PATH=/bin:/sbin:/usr/bin:/usr/sbin && export bindir=/bin && ./runtest";
 	DIR *dir = opendir("/usr/test/busybox/testsuite");
 	char *const arg[] = { "/bin/posixsrv", NULL };
 
@@ -32,8 +34,15 @@ int main(int argc, char **argv)
 		fprintf(stderr, "exec function failed: %s\n", strerror(errno));
 		_exit(EXIT_FAILURE);
 	}
+
 	/* without this delay sometimes posixsrv is not yet running before the next function call */
 	usleep(500000);
+
+	if (argc == 2)
+		sprintf(cmdargs, " -v %s", argv[1]);
+	else if (argc == 1)
+		sprintf(cmdargs, " -v");
+	strcat(cmd, cmdargs);
 
 	/* check if posixsrv has been ran properly temporarily disabled, because of problems with waitpid WNOHANG */
 	/* if (waitpid(ret, NULL, 0) > 0) {
@@ -41,12 +50,15 @@ int main(int argc, char **argv)
 	/	return 1;
 	/ } */
 
-	if ((ret = system("cd /usr/test/busybox/testsuite/ && export PATH=/bin:/sbin:/usr/bin:/usr/sbin && export bindir=/bin && ./runtest -v")) < 0) {
+	if ((ret = system(cmd)) < 0) {
 		fprintf(stderr, "system function failed: %s\n", strerror(errno));
 		return 1;
 	}
 
-	printf("\n****The Busybox Test Suite completed****\n\n");
+	if (argc == 2)
+		printf("\n****A single test of the Busybox Test Suite completed****\n\n");
+	else if (argc == 1)
+		printf("\n****The Busybox Test Suite completed****\n\n");
 
 	return 0;
 }
