@@ -9,7 +9,7 @@
 int main(int argc, char **argv)
 {
 	int ret;
-	DIR *dir = opendir("/bin/testsuite");
+	DIR *dir = opendir("/usr/test/busybox/testsuite");
 	char *const arg[] = { "/bin/posixsrv", NULL };
 
 	if (dir) {
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	/	return 1;
 	/ } */
 
-	if ((ret = system("cd /bin/testsuite/ && export PATH=/bin:/sbin:/usr/bin:/usr/sbin && echo rrrr && ./runtest -v")) < 0) {
+	if ((ret = system("cd /usr/test/busybox/testsuite/ && export PATH=/bin:/sbin:/usr/bin:/usr/sbin && export bindir=/bin && ./runtest -v")) < 0) {
 		fprintf(stderr, "system function failed: %s\n", strerror(errno));
 		return 1;
 	}
