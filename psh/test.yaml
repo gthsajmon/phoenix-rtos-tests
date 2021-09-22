@@ -33,3 +33,6 @@ test:
           targets:
               exclude:
                   - armv7m7-imxrt106x
+
+        - name: ls
+          harness: test-ls.py
