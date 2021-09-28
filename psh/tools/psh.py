@@ -84,11 +84,17 @@ def assert_prompt_fail(pexpect_proc, msg='', timeout=-1):
 def assert_exec(pexpect_proc, prog, expected='', msg=''):
     ''' Executes specified program and asserts that it's displayed correctly
     with optional expected output and next prompt'''
+    print('curr target:')
+    print(CURRENT_TARGET)
+    print('device targets:')
+    print(DEVICE_TARGETS)
     if CURRENT_TARGET in DEVICE_TARGETS:
         exec_cmd = f'sysexec {prog}'
     else:
         exec_cmd = f'/bin/{prog}'
 
+    print('exec cmd:')
+    print(exec_cmd)
     assert_cmd(pexpect_proc, exec_cmd, expected, msg)
 
 
