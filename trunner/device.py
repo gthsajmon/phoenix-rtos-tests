@@ -1,7 +1,7 @@
 # Imports of available runners
 from .runners import HostRunner, QemuRunner, IMXRT106xRunner, Stm32l4Runner
 
-from .config import PHRTOS_PROJECT_DIR, DEVICE_SERIAL, DEVICE_SERIAL_USB
+from .config import PHRTOS_PROJECT_DIR, DEVICE_SERIAL_USB
 
 
 QEMU_CMD = {
