@@ -51,6 +51,13 @@ class ParserError(Exception):
 
 
 def array_value(array: Dict[str, List[str]]) -> List[str]:
+    """Logic for setting parameters if there are multiple to choose from
+
+    'value' keyword is hard set of parameter
+    'include' keyword appends parameter
+    'excludes' keyword removes parameter
+    """
+
     value = set(array.get('value', []))
     value |= set(array.get('include', []))
     value -= set(array.get('exclude', []))
@@ -60,6 +67,8 @@ def array_value(array: Dict[str, List[str]]) -> List[str]:
 
 @dataclass
 class ParserArgs:
+    """Dataclass of initial parameters passed upon `Config` creation to parser"""
+
     targets: List[str]
     yaml_path: Path
     path: Path = field(init=False)
@@ -69,11 +78,19 @@ class ParserArgs:
 
 
 class Config(dict):
+    """Dictionary-like class for test runner config
+
+    Adding methods used upon creating this dictionaries from files
+    and setting default values if they were not created upon parsing from source config
+    """
+
     def __init__(self, config: dict) -> None:
         self.update(**config)
 
     @classmethod
     def from_dict(cls, config: dict) -> 'Config':
+        """Populating instance based on supplied 'config'"""
+
         parser = ConfigParser()
         instance = cls(config)
         parser.parse(instance)
@@ -107,6 +124,8 @@ class Config(dict):
         self['targets'] = targets
 
     def setdefaults(self) -> None:
+        """Dictionary defaults sets"""
+
         self.setdefault('ignore', False)
         self.setdefault('type', 'unit')
         self.setdefault('psh', True)
@@ -115,11 +134,19 @@ class Config(dict):
 
 
 class TestConfig(Config):
+    """Dictionary-like class for test runner tests config
+
+    Adding methods used upon creating this dictionaries from files
+    and setting default values
+    """
+
     def __init__(self, config: dict) -> None:
         super().__init__(config)
 
     @classmethod
     def from_dict(cls, config: dict, main: Config, args: ParserArgs) -> 'TestConfig':
+        """Populating instance based on supplied 'config' and 'main'"""
+
         parser = ConfigParser()
         instance = cls(config)
         parser.parse(instance)
@@ -129,6 +156,8 @@ class TestConfig(Config):
         return instance
 
     def copy_per_target(self) -> List['TestConfig']:
+        """Copying itself into list making each instance per-one-target `TestConfig`"""
+
         tests = []
         for target in array_value(self['targets']):
             test = copy.deepcopy(self)
@@ -140,6 +169,18 @@ class TestConfig(Config):
 
 
 class ConfigParser:
+    """Stateless class containing Config and TestConfig parameter parsing methods
+
+    Responsible of changing user given values in test.yaml file into
+    runner-readable values, catching errors in given paths, values and names.
+    Designed to be used by Config derived objects by themselves upon creation.
+
+    Entry points to this class are:
+    - is_array() - currently just for testing purposes
+    - parse() - direct parsing instructions
+    - resolve() - resolving paths/names
+    """
+
     KEYWORDS: Tuple[str, ...] = ('exec', 'harness', 'ignore', 'name', 'targets', 'psh', 'timeout', 'type')
     TEST_TYPES: Tuple[str, ...] = ('unit', 'harness')
 
@@ -223,6 +264,8 @@ class ConfigParser:
             raise ParserError(f'psh must be a boolean value (true/false) not {psh}')
 
     def parse(self, config: Config) -> None:
+        """Parsing values from config into valid ones, without defaults set"""
+
         self.parse_keywords(config)
         self.parse_targets(config)
         self.parse_harness(config)
@@ -259,6 +302,14 @@ class ConfigParser:
         config['targets'] = {'value': targets}
 
     def resolve(self, config: Config, args: ParserArgs) -> None:
+        """Resolving parameters from config
+
+        Resolved parameters are:
+        - harnesses
+        - tests names
+        - target specified in tests
+        """
+
         if 'harness' in config:
             self.resolve_harness(config, args.path)
         self.resolve_name(config, args.path)
@@ -267,11 +318,21 @@ class ConfigParser:
 
 @dataclass
 class TestCaseConfig:
-    main: Config
-    tests: List[TestConfig]
+    """Dataclass containing `main` runner config and 'tests' configs
+
+    Capable of loading data from file, process it and call necessary Config methods
+    to provide ready to use config for tests and runner
+
+    Entry point should be from_yaml()
+    """
+
+    main: Config                # config with runner related parameters
+    tests: List[TestConfig]     # config with tests related parameters
 
     @staticmethod
     def load_yaml(path: Path) -> dict:
+        """Using yaml module to load data from file"""
+
         with open(path, 'r') as f_yaml:
             config = yaml.safe_load(f_yaml)
 
@@ -279,6 +340,8 @@ class TestCaseConfig:
 
     @staticmethod
     def extract_components(config: dict) -> Tuple[dict, List[dict]]:
+        """Structural pre-processing of data from yaml file"""
+
         try:
             main = config.pop('test')
             tests = main.pop('tests')
@@ -289,6 +352,8 @@ class TestCaseConfig:
 
     @classmethod
     def from_dict(cls, config: dict, args: ParserArgs) -> 'TestCaseConfig':
+        """Processing data just from file into ready to use Configs"""
+
         try:
             main, tests = TestCaseConfig.extract_components(config)
             main = Config.from_dict(main)
@@ -302,5 +367,7 @@ class TestCaseConfig:
 
     @classmethod
     def from_yaml(cls, args: ParserArgs) -> 'TestCaseConfig':
+        """Entry point method that get data from file, process it and returns as correct dictionary"""
+
         config = TestCaseConfig.load_yaml(args.yaml_path)
         return cls.from_dict(config, args)
