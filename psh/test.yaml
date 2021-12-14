@@ -36,3 +36,12 @@ test:
           targets:
               exclude:
                   - armv7m7-imxrt106x
+
+        - name: touch
+          harness: test-touch.py
+          targets:
+              exclude:
+                  - armv7m7-imxrt106x
+
+        - name: history
+          harness: test-history.py
