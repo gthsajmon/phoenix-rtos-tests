@@ -43,5 +43,11 @@ test:
               exclude:
                   - armv7m7-imxrt106x
 
+        - name: runfile
+          harness: test-runfile.py
+          targets:
+              exclude:
+                  - armv7m7-imxrt106x
+
         - name: history
           harness: test-history.py
