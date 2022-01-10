@@ -23,6 +23,13 @@ from trunner.config import CURRENT_TARGET, DEVICE_TARGETS
 EOL = r'(\r+)\n'
 PROMPT = r'(\r+)\x1b\[0J' + r'\(psh\)% '
 
+esc_codes = {
+    'set_blue': r'\x1b\[34m',
+    'set_green': r'\033\[32m',
+    'set_yellowonblack': r'\033\[33;40m',
+    'reset_attributes': r'\x1b\[0m'
+}
+
 
 def init(pexpect_proc):
     ''' Runs psh and asserts a first prompt'''
