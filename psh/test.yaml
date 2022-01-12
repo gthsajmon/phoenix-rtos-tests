@@ -70,5 +70,11 @@ test:
         - name: uptime
           harness: test-uptime.py
 
+        - name: reboot
+          harness: test-reboot.py
+          targets:
+              exclude:
+                  - armv7m7-imxrt106x
+
         - name: exit
           harness: test-exit.py
