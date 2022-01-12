@@ -127,6 +127,7 @@ class IMXRT106xRunner(DeviceRunner):
                 # (when using _restart_by_poweroff)
                 if self.is_cut_power_used:
                     self.reboot(cut_power=False)
+                plo.interrupt_counting()
                 plo.wait_prompt()
 
                 if not test.exec_cmd:
